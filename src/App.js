@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Phaser from 'phaser';
 import GameScene from './scene';
+import MyEvent from './event';
 import './App.css';
 
 let gameScene;
@@ -9,10 +10,10 @@ function initScene() {
     if (gameScene) {
         return;
     }
-    gameScene = new GameScene('http://localhost:3000');
+    gameScene = new GameScene(process.env.REACT_APP_SOCKET_URL);
     new Phaser.Game({
         type: Phaser.AUTO,
-        parent: 'game-container',
+        parent: 'game-scene',
         width: 800,
         height: 600,
         pixelArt: true,
@@ -29,6 +30,7 @@ function initScene() {
 function App() {
     const [playerName, setPlayerName] = useState('');
     const [hasEntered, setHasEntered] = useState(false);
+    const [playerNameList, setPlayerNameList] = useState([]);
 
     useEffect(() => {
         const info = localStorage.getItem('info');
@@ -38,6 +40,11 @@ function App() {
         }
 
         initScene();
+        const myEvent = new MyEvent();
+        myEvent.on('playerNames', data => {
+            setPlayerNameList(data);
+        });
+        gameScene.setMyEvent(myEvent);
 
         const beforeunload = ev => {
             ev.preventDefault();
@@ -93,7 +100,13 @@ function App() {
 
     return (
         <div className='App'>
-            <div id='game-container'></div>
+            <div className='container'>
+                <div id='game-scene'></div>
+                <div className='name-box'>
+                    <div>Joined：</div>
+                    {playerNameList.map(item => <p>{item}</p>)}
+                </div>
+            </div>
             {!hasEntered && (
                 <div className='mask'>
                     <div className='form-box'>

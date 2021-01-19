@@ -36,14 +36,21 @@ class GameScene extends Phaser.Scene {
 
         this.socket.on('current', msg => {
             const currentPlayers = JSON.parse(msg);
+            const playerNames = [];
             for (let i = 0, len = currentPlayers.length; i < len; i++) {
                 const item = currentPlayers[i];
                 const id = item.id;
-                if (id && !this.playerMap[id]) {
-                    const type = id === this.socket.id ? 'HOST' : 'JOIN';
-                    this._createPlayer(id, item.name, item.x, item.y, type);
+                if (id) {
+                    if (!this.playerMap[id]) {
+                        const type = id === this.socket.id ? 'HOST' : 'JOIN';
+                        this._createPlayer(id, item.name, item.x, item.y, type);
+                    }
+
+                    playerNames.push(item.name);
                 }
             }
+
+            this.myEvent.emit('playerNames', playerNames);
         });
 
         this.socket.on('move', msg => {
@@ -56,9 +63,18 @@ class GameScene extends Phaser.Scene {
         });
 
         this.socket.on('leave', id => {
-            if (this.playerMap[id]) {
+            const playerMap = this.playerMap;
+            if (playerMap[id]) {
                 this._removePlayer(id);
             }
+
+            const playerNames = [];
+            Object.keys(playerMap).forEach(key => {
+                if (key !== id) {
+                    playerNames.push(playerMap[key].name._text);
+                }
+            });
+            this.myEvent.emit('playerNames', playerNames);
         });
     }
 
@@ -117,6 +133,10 @@ class GameScene extends Phaser.Scene {
             x: player.x,
             y: player.y
         }
+    }
+
+    setMyEvent(myEvent) {
+        this.myEvent = myEvent;
     }
 
     _createPlayer(id, name, x, y, type = '') {
