@@ -104,7 +104,7 @@ function App() {
                 <div id='game-scene'></div>
                 <div className='name-box'>
                     <div>Joined：</div>
-                    {playerNameList.map(item => <p>{item}</p>)}
+                    {playerNameList.map(item => <p key={item}>{item}</p>)}
                 </div>
             </div>
             {!hasEntered && (
