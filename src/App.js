@@ -30,7 +30,7 @@ function initScene() {
 function App() {
     const [playerName, setPlayerName] = useState('');
     const [hasEntered, setHasEntered] = useState(false);
-    const [playerNameList, setPlayerNameList] = useState([]);
+    const [playerList, setPlayerList] = useState([]);
 
     useEffect(() => {
         const info = localStorage.getItem('info');
@@ -41,8 +41,8 @@ function App() {
 
         initScene();
         const myEvent = new MyEvent();
-        myEvent.on('playerNames', data => {
-            setPlayerNameList(data);
+        myEvent.on('playerList', data => {
+            setPlayerList(data);
         });
         gameScene.setMyEvent(myEvent);
 
@@ -70,7 +70,7 @@ function App() {
     const handleClickJoin = useCallback(e => {
         if (playerName) {
             const info = localStorage.getItem('info');
-            let position = { x: 700, y: 350 };
+            let position = { x: 800, y: 800 };
             if (info) {
                 const data = JSON.parse(info);
                 position = data.position;
@@ -104,7 +104,7 @@ function App() {
                 <div id='game-scene'></div>
                 <div className='name-box'>
                     <div>Joined：</div>
-                    {playerNameList.map(item => <p key={item}>{item}</p>)}
+                    {playerList.map(item => <p key={item.id}>{item.name}</p>)}
                 </div>
             </div>
             {!hasEntered && (

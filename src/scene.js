@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import io from 'socket.io-client';
 
-const getNamePosition = player => [Math.floor(player.x - player.width / 2), Math.floor(player.y - player.width / 2) - 10];
+const getNamePosition = player => [Math.floor(player.x - player.width / 2), Math.floor(player.y - player.width / 2) - 15];
 
 class GameScene extends Phaser.Scene {
     constructor(url = '', speed = 150) {
@@ -12,21 +12,19 @@ class GameScene extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image('tiles', './assets/tilesets/tuxmon-sample-32px-extruded.png');
-        this.load.tilemapTiledJSON('map', './assets/tilemaps/tuxemon-town.json');
-        this.load.atlas('atlas', './assets/atlas/atlas.png', './assets/atlas/atlas.json');
+        this.load.image('tiles', './assets/tiles-tileset.png');
+        this.load.tilemapTiledJSON('map', './assets/town.json');
+        this.load.spritesheet('player_spritesheet', './assets/player_spritesheet.png', { frameWidth: 32, frameHeight: 32 });
     }
 
     create() {
         const map = this.make.tilemap({ key: 'map' });
-        const tileset = map.addTilesetImage('tuxmon-sample-32px-extruded', 'tiles');
-        map.createLayer('Below Player', tileset, 0, 0);
-        const worldLayer = map.createLayer('World', tileset, 0, 0);
-        const aboveLayer = map.createLayer('Above Player', tileset, 0, 0);
+        const tileset = map.addTilesetImage('tiles-tileset', 'tiles');
+        map.createLayer('land', tileset, 0, 0);
+        const worldLayer = map.createLayer('wall', tileset, 0, 0);
         worldLayer.setCollisionByProperty({ collides: true });
-        aboveLayer.setDepth(10);
-        this.worldLayer = worldLayer;
         this.map = map;
+        this.worldLayer = worldLayer;
 
         this.cursors = this.input.keyboard.createCursorKeys();
         this.leftKeyPressed = false;
@@ -36,7 +34,7 @@ class GameScene extends Phaser.Scene {
 
         this.socket.on('current', msg => {
             const currentPlayers = JSON.parse(msg);
-            const playerNames = [];
+            const playerList = [];
             for (let i = 0, len = currentPlayers.length; i < len; i++) {
                 const item = currentPlayers[i];
                 const id = item.id;
@@ -46,11 +44,11 @@ class GameScene extends Phaser.Scene {
                         this._createPlayer(id, item.name, item.x, item.y, type);
                     }
 
-                    playerNames.push(item.name);
+                    playerList.push({ id, name: item.name });
                 }
             }
 
-            this.myEvent.emit('playerNames', playerNames);
+            this.myEvent.emit('playerList', playerList);
         });
 
         this.socket.on('move', msg => {
@@ -68,13 +66,13 @@ class GameScene extends Phaser.Scene {
                 this._removePlayer(id);
             }
 
-            const playerNames = [];
+            const playerList = [];
             Object.keys(playerMap).forEach(key => {
                 if (key !== id) {
-                    playerNames.push(playerMap[key].name._text);
+                    playerList.push({ id: key, name: playerMap[key].name._text });
                 }
             });
-            this.myEvent.emit('playerNames', playerNames);
+            this.myEvent.emit('playerList', playerList);
         });
     }
 
@@ -141,7 +139,7 @@ class GameScene extends Phaser.Scene {
 
     _createPlayer(id, name, x, y, type = '') {
         const player = this.physics.add
-            .sprite(x, y, 'atlas', 'misa-front')
+            .sprite(x, y, 'player_spritesheet', 'front')
             .setSize(30, 40)
             .setOffset(0, 24);
 
@@ -183,28 +181,33 @@ class GameScene extends Phaser.Scene {
     _createAnims(player) {
         const anims = player.anims;
         anims.create({
-            key: 'misa-left-walk',
-            frames: anims.generateFrameNames('atlas', { prefix: 'misa-left-walk.', start: 0, end: 3, zeroPad: 3 }),
-            frameRate: 10,
+            key: 'left-walk',
+            frames: anims.generateFrameNames('player_spritesheet', { start: 8, end: 11 }),
+            frameRate: 8,
             repeat: -1
         });
         anims.create({
-            key: 'misa-right-walk',
-            frames: anims.generateFrameNames('atlas', { prefix: 'misa-right-walk.', start: 0, end: 3, zeroPad: 3 }),
-            frameRate: 10,
+            key: 'right-walk',
+            frames: anims.generateFrameNames('player_spritesheet', { start: 12, end: 15 }),
+            frameRate: 8,
             repeat: -1
         });
         anims.create({
-            key: 'misa-front-walk',
-            frames: anims.generateFrameNames('atlas', { prefix: 'misa-front-walk.', start: 0, end: 3, zeroPad: 3 }),
-            frameRate: 10,
+            key: 'front-walk',
+            frames: anims.generateFrameNames('player_spritesheet', { start: 0, end: 3 }),
+            frameRate: 8,
             repeat: -1
         });
         anims.create({
-            key: 'misa-back-walk',
-            frames: anims.generateFrameNames('atlas', { prefix: 'misa-back-walk.', start: 0, end: 3, zeroPad: 3 }),
-            frameRate: 10,
+            key: 'back-walk',
+            frames: anims.generateFrameNames('player_spritesheet', { start: 4, end: 7 }),
+            frameRate: 8,
             repeat: -1
+        });
+        anims.create({
+            key: 'front',
+            frames: [{ key: 'player_spritesheet', frame: 0 }],
+            frameRate: 20
         });
     }
 
@@ -240,13 +243,13 @@ class GameScene extends Phaser.Scene {
             player.body.velocity.normalize().scale(speed);
 
             if (input.left) {
-                player.anims.play('misa-left-walk', true);
+                player.anims.play('left-walk', true);
             } else if (input.right) {
-                player.anims.play('misa-right-walk', true);
+                player.anims.play('right-walk', true);
             } else if (input.up) {
-                player.anims.play('misa-back-walk', true);
+                player.anims.play('back-walk', true);
             } else if (input.down) {
-                player.anims.play('misa-front-walk', true);
+                player.anims.play('front-walk', true);
             } else {
                 player.anims.stop();
             }

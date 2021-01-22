@@ -10,12 +10,14 @@ yarn
 yarn start
 ```
 
-## How `yomo-sink-socket-io-example` works
+## Game Assets
 
-![YoMo](https://github.com/yomorun/yomo-sink-socketio/blob/main/yomo-sink.png)
+- [character-sprite-walk-animation](https://opengameart.org/content/character-sprite-walk-animation) by [@dbhvk](https://twitter.com/dbhvk)
+- [medieval town tileset](https://opengameart.org/content/medieval-town-0) by Keith Karnage
 
 ## More about YoMo
 
 [yomorun/yomo](https://github.com/yomorun/yomo)
 
 More [examples](https://github.com/yomorun)
+
