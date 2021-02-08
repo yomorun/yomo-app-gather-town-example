@@ -44,7 +44,6 @@ function App() {
         customEvent.on('playerList', data => {
             setPlayerList(data);
         });
-        gameScene.setCustomEvent(customEvent);
 
         const beforeunload = ev => {
             ev.preventDefault();
