@@ -1,12 +1,15 @@
 import Phaser from 'phaser';
 import io from 'socket.io-client';
+import { Observable } from 'rxjs';
+import { distinctUntilChanged } from 'rxjs/operators';
 
 const getNamePosition = player => [Math.floor(player.x - player.width / 2), Math.floor(player.y - player.width / 2) - 15];
 
 class GameScene extends Phaser.Scene {
-    constructor(url = '', speed = 150) {
+    constructor(url, customEvent, speed = 150) {
         super('GameScene');
         this.socket = io(url);
+        this.customEvent = customEvent;
         this.speed = speed;
         this.playerMap = {};
     }
@@ -27,10 +30,27 @@ class GameScene extends Phaser.Scene {
         this.worldLayer = worldLayer;
 
         this.cursors = this.input.keyboard.createCursorKeys();
-        this.leftKeyPressed = false;
-        this.rightKeyPressed = false;
-        this.upKeyPressed = false;
-        this.downKeyPressed = false;
+
+        // this.leftKeyPressed = false;
+        // this.rightKeyPressed = false;
+        // this.upKeyPressed = false;
+        // this.downKeyPressed = false;
+
+        // rxjs 方式发送按键数据
+        const source = Observable.create(observer => {
+            this.customEvent.on('cursor', data => {
+                observer.next(data);
+            });
+        });
+
+        source
+            .pipe(
+                distinctUntilChanged((a, b) => a === b)
+            )
+            .subscribe(input => {
+                console.log(input);
+                this.socket.emit('move', input);
+            });
 
         this.socket.on('current', msg => {
             const currentPlayers = JSON.parse(msg);
@@ -48,7 +68,7 @@ class GameScene extends Phaser.Scene {
                 }
             }
 
-            this.myEvent.emit('playerList', playerList);
+            this.customEvent.emit('playerList', playerList);
         });
 
         this.socket.on('move', msg => {
@@ -72,7 +92,7 @@ class GameScene extends Phaser.Scene {
                     playerList.push({ id: key, name: playerMap[key].name._text });
                 }
             });
-            this.myEvent.emit('playerList', playerList);
+            this.customEvent.emit('playerList', playerList);
         });
     }
 
@@ -82,46 +102,61 @@ class GameScene extends Phaser.Scene {
         const hostPlayerId = this.socket.id;
         const hostPlayer = this.playerMap[hostPlayerId];
         if (hostPlayer) {
-            let left = this.leftKeyPressed;
-            let right = this.rightKeyPressed;
-            let up = this.upKeyPressed;
-            let down = this.downKeyPressed;
+            // let left = this.leftKeyPressed;
+            // let right = this.rightKeyPressed;
+            // let up = this.upKeyPressed;
+            // let down = this.downKeyPressed;
 
-            if (this.cursors.left.isDown) {
-                this.leftKeyPressed = true;
-            } else if (this.cursors.right.isDown) {
-                this.rightKeyPressed = true;
-            } else {
-                this.leftKeyPressed = false;
-                this.rightKeyPressed = false;
-            }
+            // if (this.cursors.left.isDown) {
+            //     this.leftKeyPressed = true;
+            // } else if (this.cursors.right.isDown) {
+            //     this.rightKeyPressed = true;
+            // } else {
+            //     this.leftKeyPressed = false;
+            //     this.rightKeyPressed = false;
+            // }
 
-            if (this.cursors.up.isDown) {
-                this.upKeyPressed = true;
-            } else if (this.cursors.down.isDown) {
-                this.downKeyPressed = true;
-            } else {
-                this.upKeyPressed = false;
-                this.downKeyPressed = false;
-            }
+            // if (this.cursors.up.isDown) {
+            //     this.upKeyPressed = true;
+            // } else if (this.cursors.down.isDown) {
+            //     this.downKeyPressed = true;
+            // } else {
+            //     this.upKeyPressed = false;
+            //     this.downKeyPressed = false;
+            // }
 
-            if (left !== this.leftKeyPressed ||
-                right !== this.rightKeyPressed ||
-                up !== this.upKeyPressed ||
-                down !== this.downKeyPressed) {
+            // if (left !== this.leftKeyPressed ||
+            //     right !== this.rightKeyPressed ||
+            //     up !== this.upKeyPressed ||
+            //     down !== this.downKeyPressed) {
 
-                this.socket.emit('move', JSON.stringify({
-                    id: hostPlayerId,
-                    x: hostPlayer.x,
-                    y: hostPlayer.y,
-                    input: {
-                        left: this.leftKeyPressed,
-                        right: this.rightKeyPressed,
-                        up: this.upKeyPressed,
-                        down: this.downKeyPressed
-                    }
-                }));
-            }
+            //     this.socket.emit('move', JSON.stringify({
+            //         id: hostPlayerId,
+            //         x: hostPlayer.x,
+            //         y: hostPlayer.y,
+            //         input: {
+            //             left: this.leftKeyPressed,
+            //             right: this.rightKeyPressed,
+            //             up: this.upKeyPressed,
+            //             down: this.downKeyPressed
+            //         }
+            //     }));
+            // }
+
+
+            // rxjs 方式发送按键数据
+            const cursors = this.cursors;
+            this.customEvent.emit('cursor', JSON.stringify({
+                id: hostPlayerId,
+                x: hostPlayer.x,
+                y: hostPlayer.y,
+                input: {
+                    left: cursors.left.isDown,
+                    right: cursors.right.isDown,
+                    up: cursors.up.isDown,
+                    down: cursors.down.isDown
+                }
+            }));
         }
     }
 
@@ -133,8 +168,8 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    setMyEvent(myEvent) {
-        this.myEvent = myEvent;
+    setCustomEvent(customEvent) {
+        this.customEvent = customEvent;
     }
 
     _createPlayer(id, name, x, y, type = '') {

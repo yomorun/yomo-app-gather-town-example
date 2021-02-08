@@ -5,12 +5,13 @@ import MyEvent from './event';
 import './App.css';
 
 let gameScene;
+const customEvent = new MyEvent();
 
 function initScene() {
     if (gameScene) {
         return;
     }
-    gameScene = new GameScene(process.env.REACT_APP_SOCKET_URL);
+    gameScene = new GameScene(process.env.REACT_APP_SOCKET_URL, customEvent);
     new Phaser.Game({
         type: Phaser.AUTO,
         parent: 'game-scene',
@@ -40,11 +41,10 @@ function App() {
         }
 
         initScene();
-        const myEvent = new MyEvent();
-        myEvent.on('playerList', data => {
+        customEvent.on('playerList', data => {
             setPlayerList(data);
         });
-        gameScene.setMyEvent(myEvent);
+        gameScene.setCustomEvent(customEvent);
 
         const beforeunload = ev => {
             ev.preventDefault();
