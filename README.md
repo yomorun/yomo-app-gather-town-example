@@ -10,6 +10,15 @@ yarn
 yarn start
 ```
 
+## Server code
+
+[yomorun/yomo-socketio-adapter](https://github.com/yomorun/yomo-socketio-adapter)
+
+```shell
+cd yomo-socketio-adapter
+go run main.go
+```
+
 ## Game Assets
 
 - [character-sprite-walk-animation](https://opengameart.org/content/character-sprite-walk-animation) by [@dbhvk](https://twitter.com/dbhvk)
@@ -21,3 +30,6 @@ yarn start
 
 More [examples](https://github.com/yomorun)
 
+## Remote-Control in FRP way by YoMo
+
+[all about YoMo can be found here](https://github.com/yomorun/yomo)
