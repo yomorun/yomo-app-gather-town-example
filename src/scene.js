@@ -31,12 +31,6 @@ class GameScene extends Phaser.Scene {
 
         this.cursors = this.input.keyboard.createCursorKeys();
 
-        // this.leftKeyPressed = false;
-        // this.rightKeyPressed = false;
-        // this.upKeyPressed = false;
-        // this.downKeyPressed = false;
-
-        // rxjs 方式发送按键数据
         const source = Observable.create(observer => {
             this.customEvent.on('cursor', data => {
                 observer.next(data);
@@ -45,11 +39,11 @@ class GameScene extends Phaser.Scene {
 
         source
             .pipe(
-                distinctUntilChanged((a, b) => a === b)
+                distinctUntilChanged((a, b) => JSON.stringify(a.input) === JSON.stringify(b.input))
             )
-            .subscribe(input => {
-                console.log(input);
-                this.socket.emit('move', input);
+            .subscribe(data => {
+                console.log(data.input);
+                this.socket.emit('move', JSON.stringify(data));
             });
 
         this.socket.on('current', msg => {
@@ -102,51 +96,8 @@ class GameScene extends Phaser.Scene {
         const hostPlayerId = this.socket.id;
         const hostPlayer = this.playerMap[hostPlayerId];
         if (hostPlayer) {
-            // let left = this.leftKeyPressed;
-            // let right = this.rightKeyPressed;
-            // let up = this.upKeyPressed;
-            // let down = this.downKeyPressed;
-
-            // if (this.cursors.left.isDown) {
-            //     this.leftKeyPressed = true;
-            // } else if (this.cursors.right.isDown) {
-            //     this.rightKeyPressed = true;
-            // } else {
-            //     this.leftKeyPressed = false;
-            //     this.rightKeyPressed = false;
-            // }
-
-            // if (this.cursors.up.isDown) {
-            //     this.upKeyPressed = true;
-            // } else if (this.cursors.down.isDown) {
-            //     this.downKeyPressed = true;
-            // } else {
-            //     this.upKeyPressed = false;
-            //     this.downKeyPressed = false;
-            // }
-
-            // if (left !== this.leftKeyPressed ||
-            //     right !== this.rightKeyPressed ||
-            //     up !== this.upKeyPressed ||
-            //     down !== this.downKeyPressed) {
-
-            //     this.socket.emit('move', JSON.stringify({
-            //         id: hostPlayerId,
-            //         x: hostPlayer.x,
-            //         y: hostPlayer.y,
-            //         input: {
-            //             left: this.leftKeyPressed,
-            //             right: this.rightKeyPressed,
-            //             up: this.upKeyPressed,
-            //             down: this.downKeyPressed
-            //         }
-            //     }));
-            // }
-
-
-            // rxjs 方式发送按键数据
             const cursors = this.cursors;
-            this.customEvent.emit('cursor', JSON.stringify({
+            this.customEvent.emit('cursor', {
                 id: hostPlayerId,
                 x: hostPlayer.x,
                 y: hostPlayer.y,
@@ -156,7 +107,7 @@ class GameScene extends Phaser.Scene {
                     up: cursors.up.isDown,
                     down: cursors.down.isDown
                 }
-            }));
+            });
         }
     }
 
