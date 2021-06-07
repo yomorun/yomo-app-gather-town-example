@@ -22,21 +22,25 @@
 }
 
 .name-box {
-  margin-left: 20px;
-  width: 200px;
-  height: 300px;
-  display: flex;
+  margin-left   : 20px;
+  width         : 200px;
+  height        : 300px;
+  display       : flex;
   flex-direction: column;
-  padding: 5px 10px;
-  overflow-y: auto;
-  border: 1px solid blue;
+  padding       : 5px 10px;
+  overflow-y    : auto;
+  border        : 1px solid rgb(237, 237, 241);
+}
+
+.name-box>div {
+  font-size: 20px;
 }
 
 .name-box p {
   margin-bottom: 5px;
-  font-size  : 12px;
-  color      : blue;
-  font-weight: 600;
+  font-size    : 12px;
+  color        : blue;
+  font-weight  : 600;
 }
 
 .mask {
@@ -64,7 +68,7 @@
 }
 
 .form-box p {
-  font-size  : 12px;
+  font-size  : 16px;
   color      : #000;
   font-weight: 600;
   word-break : break-word;
@@ -74,10 +78,11 @@
   margin-top    : 10px;
   padding       : 4px 10px;
   font-weight   : 600;
-  font-size     : 12px;
-  line-height   : 15px;
+  font-size     : 16px;
+  line-height   : 16px;
   letter-spacing: 0.04em;
   text-align    : center;
+  font-family   : 'Exo 2', sans-serif;
 }
 
 .form-box .button {
@@ -87,10 +92,10 @@
   align-items     : center;
   cursor          : pointer;
   padding         : 8px 16px;
-  border-radius   : 16px;
+  border-radius   : 8px;
   text-align      : center;
   background-color: blue;
-  font-size       : 14px;
+  font-size       : 16px;
   color           : white;
   font-weight     : 600;
 }

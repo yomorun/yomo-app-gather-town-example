@@ -1,17 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import Phaser from 'phaser';
 import GameScene from './scene';
-import MyEvent from './event';
+
 import './App.css';
 
 let gameScene;
-const customEvent = new MyEvent();
 
 function initScene() {
     if (gameScene) {
         return;
     }
-    gameScene = new GameScene(process.env.REACT_APP_SOCKET_URL, customEvent);
+    gameScene = new GameScene(process.env.REACT_APP_SOCKET_URL);
     new Phaser.Game({
         type: Phaser.AUTO,
         parent: 'game-scene',
@@ -41,7 +40,7 @@ function App() {
         }
 
         initScene();
-        customEvent.on('playerList', data => {
+        gameScene.myEvent.on('playerList', data => {
             setPlayerList(data);
         });
 
