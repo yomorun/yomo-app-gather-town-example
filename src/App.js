@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Phaser from 'phaser';
 import GameScene from './scene';
-import MyEvent from './event';
+
 import './App.css';
 
 let gameScene;
@@ -40,11 +40,9 @@ function App() {
         }
 
         initScene();
-        const myEvent = new MyEvent();
-        myEvent.on('playerList', data => {
+        gameScene.myEvent.on('playerList', data => {
             setPlayerList(data);
         });
-        gameScene.setMyEvent(myEvent);
 
         const beforeunload = ev => {
             ev.preventDefault();

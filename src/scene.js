@@ -1,14 +1,18 @@
 import Phaser from 'phaser';
 import io from 'socket.io-client';
+import { Observable } from 'rxjs';
+import { distinctUntilChanged } from 'rxjs/operators';
+import MyEvent from './event';
 
-const getNamePosition = player => [Math.floor(player.x - player.width / 2), Math.floor(player.y - player.width / 2) - 15];
+const getNamePosition = player => [Math.floor(player.x - player.width / 2), Math.floor(player.y - player.width / 2) - 20];
 
 class GameScene extends Phaser.Scene {
-    constructor(url = '', speed = 150) {
+    constructor(url, speed = 150) {
         super('GameScene');
         this.socket = io(url);
         this.speed = speed;
         this.playerMap = {};
+        this.myEvent = new MyEvent();
     }
 
     preload() {
@@ -25,32 +29,45 @@ class GameScene extends Phaser.Scene {
         worldLayer.setCollisionByProperty({ collides: true });
         this.map = map;
         this.worldLayer = worldLayer;
-
         this.cursors = this.input.keyboard.createCursorKeys();
-        this.leftKeyPressed = false;
-        this.rightKeyPressed = false;
-        this.upKeyPressed = false;
-        this.downKeyPressed = false;
 
+        this.socket.on('hostPlayerId', hostPlayerId => {
+            this.hostPlayerId = hostPlayerId;
+        });
+
+        // Filter some repeated operations
+        const source = Observable.create(observer => {
+            this.myEvent.on('cursor', data => {
+                observer.next(data);
+            });
+        });
+        source
+            .pipe(
+                distinctUntilChanged((a, b) => JSON.stringify(a.input) === JSON.stringify(b.input))
+            )
+            .subscribe(data => {
+                // Send player actions
+                this.socket.emit('move', JSON.stringify(data));
+            });
+
+        // When a new player joins the game
         this.socket.on('current', msg => {
             const currentPlayers = JSON.parse(msg);
             const playerList = [];
             for (let i = 0, len = currentPlayers.length; i < len; i++) {
                 const item = currentPlayers[i];
                 const id = item.id;
-                if (id) {
-                    if (!this.playerMap[id]) {
-                        const type = id === this.socket.id ? 'HOST' : 'JOIN';
-                        this._createPlayer(id, item.name, item.x, item.y, type);
-                    }
-
-                    playerList.push({ id, name: item.name });
+                const name = `${item.name} [${item.server_region}]`;
+                if (!this.playerMap[id]) {
+                    this._createPlayer(id, name, item.x, item.y, id === this.hostPlayerId ? 'HOST' : 'JOIN');
                 }
+                playerList.push({ id, name });
             }
 
             this.myEvent.emit('playerList', playerList);
         });
 
+        // Players are moving
         this.socket.on('move', msg => {
             const action = JSON.parse(msg);
             const player = this.playerMap[action.id];
@@ -60,6 +77,7 @@ class GameScene extends Phaser.Scene {
             }
         });
 
+        // When the player leaves
         this.socket.on('leave', id => {
             const playerMap = this.playerMap;
             if (playerMap[id]) {
@@ -79,62 +97,30 @@ class GameScene extends Phaser.Scene {
     update(time, delta) {
         this._movePlayers();
 
-        const hostPlayerId = this.socket.id;
+        const hostPlayerId = this.hostPlayerId;
         const hostPlayer = this.playerMap[hostPlayerId];
         if (hostPlayer) {
-            let left = this.leftKeyPressed;
-            let right = this.rightKeyPressed;
-            let up = this.upKeyPressed;
-            let down = this.downKeyPressed;
-
-            if (this.cursors.left.isDown) {
-                this.leftKeyPressed = true;
-            } else if (this.cursors.right.isDown) {
-                this.rightKeyPressed = true;
-            } else {
-                this.leftKeyPressed = false;
-                this.rightKeyPressed = false;
-            }
-
-            if (this.cursors.up.isDown) {
-                this.upKeyPressed = true;
-            } else if (this.cursors.down.isDown) {
-                this.downKeyPressed = true;
-            } else {
-                this.upKeyPressed = false;
-                this.downKeyPressed = false;
-            }
-
-            if (left !== this.leftKeyPressed ||
-                right !== this.rightKeyPressed ||
-                up !== this.upKeyPressed ||
-                down !== this.downKeyPressed) {
-
-                this.socket.emit('move', JSON.stringify({
-                    id: hostPlayerId,
-                    x: hostPlayer.x,
-                    y: hostPlayer.y,
-                    input: {
-                        left: this.leftKeyPressed,
-                        right: this.rightKeyPressed,
-                        up: this.upKeyPressed,
-                        down: this.downKeyPressed
-                    }
-                }));
-            }
+            const cursors = this.cursors;
+            this.myEvent.emit('cursor', {
+                id: hostPlayerId,
+                x: hostPlayer.x,
+                y: hostPlayer.y,
+                input: {
+                    left: cursors.left.isDown,
+                    right: cursors.right.isDown,
+                    up: cursors.up.isDown,
+                    down: cursors.down.isDown
+                }
+            });
         }
     }
 
     getHostPlayerPosition() {
-        const player = this.playerMap[this.socket.id];
+        const player = this.playerMap[this.hostPlayerId];
         return {
             x: player.x,
             y: player.y
         }
-    }
-
-    setMyEvent(myEvent) {
-        this.myEvent = myEvent;
     }
 
     _createPlayer(id, name, x, y, type = '') {
@@ -173,7 +159,7 @@ class GameScene extends Phaser.Scene {
     _createName(player, name) {
         const [_x, _y] = getNamePosition(player);
         player.name = this.add
-            .text(_x, _y, name, { font: '12px', fill: 'blue' })
+            .text(_x, _y, name, { fontSize: '12px', fill: 'white' })
             .setScrollFactor(1)
             .setDepth(30);
     }
@@ -214,16 +200,12 @@ class GameScene extends Phaser.Scene {
     _movePlayers() {
         const speed = this.speed;
         const playerMap = this.playerMap;
-
         Object.keys(playerMap).forEach(key => {
             const player = playerMap[key];
             const input = player.input;
 
             // Stop any previous movement from the last frame
             player.body.setVelocity(0);
-
-            const [_x, _y] = getNamePosition(player);
-            player.name.setPosition(_x, _y);
 
             // Horizontal movement
             if (input.left) {
@@ -252,6 +234,11 @@ class GameScene extends Phaser.Scene {
                 player.anims.play('front-walk', true);
             } else {
                 player.anims.stop();
+            }
+
+            if (input.left || input.right || input.up || input.down) {
+                const [_x, _y] = getNamePosition(player);
+                player.name.setPosition(_x, _y);
             }
         });
     }
