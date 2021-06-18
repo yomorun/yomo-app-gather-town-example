@@ -1,18 +1,25 @@
-# YoMo Example: yomo-app-gather-town-example
+# vhq-frontend-metaverse
 
-An example of [socket.io](https://socket.io/) for [yomo](https://github.com/yomorun/yomo) represents how to build a `yomo-sink` to play multiplayer online games in a react application.
+Have you tried [gather.town](https://gather.town) or [TeamFlow](https://www.teamflowhq.com/) ? 
+If you wanna have a try to build one by yourself, this is a VHQ example built with [YoMo](https://github.com/yomorun/yomo) + [socket.io](https://socket.io/) in Metaverse experience.
+
+Online Preview: [https://vhq-demo.yomo.run/](https://vhq-demo.yomo.run/)
 
 ## How to run this example
 
 ```shell
-cd yomo-app-gather-town-example
+cd vhq-frontend-metaverse
 yarn 
 yarn start
 ```
 
-## Server code
+## Next.js version
 
-[yomorun/yomo-socketio-adapter](https://github.com/yomorun/yomo-socketio-adapter)
+[vhq-frontend-nextjs](https://github.com/yomorun/vhq-frontend-nextjs)
+
+## Backend code
+
+[vhq-backend](https://github.com/yomorun/vhq-backend)
 
 ```shell
 cd yomo-socketio-adapter
