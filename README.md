@@ -21,11 +21,6 @@ yarn start
 
 [vhq-backend](https://github.com/yomorun/vhq-backend)
 
-```shell
-cd yomo-socketio-adapter
-go run main.go
-```
-
 ## Game Assets
 
 - [character-sprite-walk-animation](https://opengameart.org/content/character-sprite-walk-animation) by [@dbhvk](https://twitter.com/dbhvk)
